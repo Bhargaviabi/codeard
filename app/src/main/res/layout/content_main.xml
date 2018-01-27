@@ -27,6 +27,7 @@
             android:layout_marginTop="8dp"
             android:clickable="true"
             app:backgroundTint="@android:color/holo_green_dark"
+            android:src="@drawable/ic_on"
             app:layout_constraintStart_toEndOf="@+id/fabOFF"
             app:layout_constraintTop_toTopOf="parent"
             app:srcCompat="@android:color/holo_green_dark"
@@ -40,6 +41,7 @@
             android:layout_marginTop="8dp"
             android:clickable="true"
             app:backgroundTint="@android:color/holo_red_dark"
+            android:src="@drawable/ic_fab_off"
             app:layout_constraintStart_toEndOf="@+id/fabBR_DO"
             app:layout_constraintTop_toTopOf="parent"
             android:focusable="true" />
@@ -65,6 +67,7 @@
             android:layout_marginTop="8dp"
             android:clickable="true"
             app:backgroundTint="#FFFFFFFF"
+            android:src="@drawable/ic_fab_w"
             app:layout_constraintStart_toEndOf="@+id/fabBLUE"
             app:layout_constraintTop_toBottomOf="@+id/fabBR_UP" android:focusable="true" />
 
@@ -115,6 +118,7 @@
             android:layout_marginTop="8dp"
             android:clickable="true"
             app:backgroundTint="@android:color/holo_blue_dark"
+            android:src="@drawable/ic_fab_b"
             app:layout_constraintStart_toEndOf="@+id/fabGREEN"
             app:layout_constraintTop_toBottomOf="@+id/fabBR_UP"
             android:focusable="true" />
@@ -162,6 +166,7 @@
             android:layout_marginTop="8dp"
             android:clickable="true"
             app:backgroundTint="@android:color/holo_green_dark"
+            android:src="@drawable/ic_fab_g"
             app:layout_constraintStart_toEndOf="@+id/fabRED"
             app:layout_constraintTop_toBottomOf="@+id/fabBR_UP"
             android:focusable="true" />
@@ -209,6 +214,7 @@
             android:layout_marginTop="8dp"
             android:clickable="true"
             app:backgroundTint="@android:color/holo_red_dark"
+            android:src="@drawable/ic_fab_r"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/fabBR_UP"
             android:focusable="true" />
