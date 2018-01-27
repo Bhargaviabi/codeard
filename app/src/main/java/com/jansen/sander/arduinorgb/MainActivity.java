@@ -11,6 +11,7 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.jansen.sander.arduinorgb.databinding.ActivityMainBinding;
 import com.jansen.sander.arduinorgb.databinding.ContentMainBinding;
 
 public class MainActivity extends AppCompatActivity {
@@ -18,10 +19,14 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        ContentMainBinding mainBinding = DataBindingUtil.setContentView(this, R.layout.activity_main);
+        ContentMainBinding contentMainBinding = DataBindingUtil.setContentView(this, R.layout.content_main);
+        //ActivityMainBinding mainBinding = DataBindingUtil.setContentView(this, R.layout.activity_main);
         //setContentView(R.layout.activity_main);
+        contentMainBinding.textView2.setText("test");
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+
     }
 
     @Override
