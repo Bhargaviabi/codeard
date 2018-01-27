@@ -1,0 +1,23 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory android:title="@string/pref_title_MAC_Arduino">
+
+        <EditTextPreference
+            android:defaultValue="98:D3:32:11:02:9D"
+            android:key="pref_mac_arduino"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:title="@string/pref_title_mac" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/pref_title_features">
+
+        <SwitchPreference
+            android:id="@+id/pref_features"
+            android:defaultValue="false"
+            android:key="enable_features"
+            android:summaryOff="@string/pref_sw_featuren_off"
+            android:summaryOn="@string/pref_sw_features_on"
+            android:title="@string/pref_enable_hidden_features" />
+    </PreferenceCategory>
+
+</PreferenceScreen>
