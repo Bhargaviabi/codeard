@@ -8,17 +8,16 @@ import android.os.Bundle;
 import android.os.Vibrator;
 import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.SeekBar;
 
 import com.jansen.sander.arduinorgb.databinding.ActivityMainBinding;
-import com.jansen.sander.arduinorgb.databinding.ContentMainBinding;
 
 public class MainActivity extends AppCompatActivity {
     private final static int VIBRATION_TIME = 100;
@@ -32,11 +31,12 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mainBinding = DataBindingUtil.setContentView(this, R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         bindButtons();
+        bindColorSliders();
     }
 
     protected void onStart() {
@@ -104,6 +104,12 @@ public class MainActivity extends AppCompatActivity {
         mainBinding.contentMain.fabBeat.setOnClickListener(fabListener);
     }
 
+    private void bindColorSliders(){
+        mainBinding.contentMain.sliderRed.setOnSeekBarChangeListener(slideListener);
+        mainBinding.contentMain.sliderGreen.setOnSeekBarChangeListener(slideListener);
+        mainBinding.contentMain.sliderBlue.setOnSeekBarChangeListener(slideListener);
+    }
+
     private void vibrate(){
         if(sharedPref.getBoolean(SettingsActivity.ENABLE_HAPTIC_FEEDBACK, true)) {
             vibrator.vibrate(VIBRATION_TIME);
@@ -116,11 +122,30 @@ public class MainActivity extends AppCompatActivity {
             if (v.getContentDescription() != null){
                 Log.d("IR-VALUE", v.getContentDescription().toString());
             }
-
-
-
             vibrate();
+        }
+    };
 
+    protected SeekBar.OnSeekBarChangeListener slideListener = new SeekBar.OnSeekBarChangeListener() {
+        int red, green, blue;
+
+        @Override
+        public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+
+        }
+
+        @Override
+        public void onStartTrackingTouch(SeekBar seekBar) {
+
+        }
+
+        @Override
+        public void onStopTrackingTouch(SeekBar seekBar) {
+            red     = mainBinding.contentMain.sliderRed.getProgress();
+            green   = mainBinding.contentMain.sliderGreen.getProgress();
+            blue    = mainBinding.contentMain.sliderBlue.getProgress();
+
+            Log.d("COLOR", String.format(getResources().getString(R.string.color_value), red, green, blue));
         }
     };
 }
