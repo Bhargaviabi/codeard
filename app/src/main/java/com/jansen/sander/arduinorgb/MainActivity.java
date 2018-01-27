@@ -1,6 +1,7 @@
 package com.jansen.sander.arduinorgb;
 
 import android.content.Intent;
+import android.databinding.DataBindingUtil;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -10,12 +11,15 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.jansen.sander.arduinorgb.databinding.ContentMainBinding;
+
 public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        ContentMainBinding mainBinding = DataBindingUtil.setContentView(this, R.layout.activity_main);
+        //setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
     }
