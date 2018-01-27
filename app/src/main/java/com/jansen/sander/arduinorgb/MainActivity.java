@@ -15,14 +15,13 @@ import com.jansen.sander.arduinorgb.databinding.ActivityMainBinding;
 import com.jansen.sander.arduinorgb.databinding.ContentMainBinding;
 
 public class MainActivity extends AppCompatActivity {
+    private ActivityMainBinding mainBinding;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        ContentMainBinding contentMainBinding = DataBindingUtil.setContentView(this, R.layout.content_main);
-        //ActivityMainBinding mainBinding = DataBindingUtil.setContentView(this, R.layout.activity_main);
-        //setContentView(R.layout.activity_main);
-        contentMainBinding.textView2.setText("test");
+        mainBinding = DataBindingUtil.setContentView(this, R.layout.activity_main);
+        mainBinding.contentMain.textView2.setText("testjeee");
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
