@@ -83,4 +83,5 @@
     <string name="pref_enable_hidden_features">Enable features</string>
     <string name="pref_sw_featuren_off">Beta features are hidden.</string>
     <string name="pref_sw_features_on">Beta features are available, but can cause instability.</string>
+    <string name="title_activity_color">Load Color</string>
 </resources>

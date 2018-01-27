@@ -27,6 +27,15 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.jansen.sander.arduinorgb.MainActivity" />
         </activity>
+        <activity
+            android:name=".ColorActivity"
+            android:label="@string/title_activity_color"
+            android:parentActivityName=".MainActivity"
+            android:theme="@style/AppTheme.NoActionBar">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.jansen.sander.arduinorgb.MainActivity" />
+        </activity>
     </application>
 
 </manifest>
