@@ -37,7 +37,8 @@ import java.util.List;
  */
 public class SettingsActivity extends AppCompatPreferenceActivity {
     public static final String MAC_ARDUINO = "pref_mac_arduino";
-    public static final String ENABLE_FEATURES = "enable_features";
+    public static final String ENABLE_FEATURES = "pref_enable_features";
+    public static final String ENABLE_HAPTIC_FEEDBACK = "pref_enable_vibration";
 
     /**
      * A preference value change listener that updates the preference's summary
@@ -174,6 +175,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             // guidelines.
             bindPreferenceSummaryToValue(findPreference(MAC_ARDUINO));
             bindPreferenceSummaryToValue(findPreference(ENABLE_FEATURES));
+            bindPreferenceSummaryToValue(findPreference(ENABLE_HAPTIC_FEEDBACK));
         }
 
         @Override

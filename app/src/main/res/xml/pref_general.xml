@@ -11,13 +11,24 @@
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/pref_title_features">
 
+    <SwitchPreference
+        android:id="@+id/pref_features"
+        android:defaultValue="false"
+        android:key="pref_enable_features"
+        android:summaryOff="@string/pref_sw_featuren_off"
+        android:summaryOn="@string/pref_sw_features_on"
+        android:title="@string/pref_enable_hidden_features" />
+</PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/pref_title_haptic_feedback">
         <SwitchPreference
-            android:id="@+id/pref_features"
-            android:defaultValue="false"
-            android:key="enable_features"
-            android:summaryOff="@string/pref_sw_featuren_off"
-            android:summaryOn="@string/pref_sw_features_on"
-            android:title="@string/pref_enable_hidden_features" />
+            android:id="@+id/pref_vibration"
+            android:defaultValue="true"
+            android:key="pref_enable_vibration"
+            android:summaryOff="@string/pref_sw_vibration_off"
+            android:summaryOn="@string/pref_sw_vibration_on"
+            android:title="@string/pref_enable_vibration" />
+
     </PreferenceCategory>
 
 </PreferenceScreen>

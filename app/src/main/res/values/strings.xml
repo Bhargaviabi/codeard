@@ -83,4 +83,8 @@
     <string name="pref_enable_hidden_features">Enable features</string>
     <string name="pref_sw_featuren_off">Beta features are hidden.</string>
     <string name="pref_sw_features_on">Beta features are available, but can cause instability.</string>
+    <string name="pref_sw_vibration_off">No haptic feedback</string>
+    <string name="pref_sw_vibration_on">Enables haptic feedback</string>
+    <string name="pref_enable_vibration">Haptic feedback</string>
+    <string name="pref_title_haptic_feedback">Haptic feedback</string>
 </resources>
