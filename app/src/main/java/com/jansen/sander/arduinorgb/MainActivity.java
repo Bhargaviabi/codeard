@@ -168,7 +168,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void initBluetooth(){
         if (checkBluetoothCompatibility()){
-            
+            enableBluetooth();
         } else {
             snackbar.setText("Bluetooth not supported").show();
         }
