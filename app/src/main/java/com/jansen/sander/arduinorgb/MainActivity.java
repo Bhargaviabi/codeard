@@ -1,5 +1,7 @@
 package com.jansen.sander.arduinorgb;
 
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -8,6 +10,7 @@ import android.os.Bundle;
 import android.os.Vibrator;
 import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -19,6 +22,8 @@ import android.widget.SeekBar;
 
 import com.jansen.sander.arduinorgb.databinding.ActivityMainBinding;
 
+import java.util.Set;
+
 public class MainActivity extends AppCompatActivity {
     private final static int VIBRATION_TIME = 100;
 
@@ -26,6 +31,10 @@ public class MainActivity extends AppCompatActivity {
 
     private ActivityMainBinding mainBinding;
     private Vibrator vibrator;
+
+    private Snackbar snackbar;
+
+    private BluetoothAdapter mBluetoothAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +44,8 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        snackbar = Snackbar.make(getWindow().getDecorView().findViewById(android.R.id.content), "", Snackbar.LENGTH_LONG);
+
         bindButtons();
         bindColorSliders();
     }
@@ -42,7 +53,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
         sharedPref = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        initBluetooth();
     }
 
     @Override
@@ -148,4 +160,55 @@ public class MainActivity extends AppCompatActivity {
             Log.d("COLOR", String.format(getResources().getString(R.string.color_value), red, green, blue));
         }
     };
+
+
+    private void listBluetoothDevices(){
+
+    }
+
+    private void initBluetooth(){
+        if (checkBluetoothCompatibility()){
+            
+        } else {
+            snackbar.setText("Bluetooth not supported").show();
+        }
+    }
+
+    private boolean checkBluetoothCompatibility(){
+        if (mBluetoothAdapter != null){
+            return true;
+        }
+        return false;
+    }
+
+    private void enableBluetooth(){
+        final int REQUEST_ENABLE_BT = 1;
+        if (!mBluetoothAdapter.isEnabled()){
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+        }
+    }
+
+    private void enableDiscoverability(){
+        Intent discoverableIntent =
+                new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+        discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
+        startActivity(discoverableIntent);
+    }
+
+    private void queryPairedDevives(){
+        Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
+
+        if (pairedDevices.size() > 0) {
+            // There are paired devices. Get the name and address of each paired device.
+            for (BluetoothDevice device : pairedDevices) {
+                String deviceName = device.getName();
+                String deviceHardwareAddress = device.getAddress(); // MAC address
+            }
+        }
+    }
+
+    private void discoverBluetoothDevices(){
+
+    }
 }
