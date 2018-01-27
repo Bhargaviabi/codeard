@@ -310,7 +310,7 @@
             android:clickable="true"
             android:focusable="true"
             android:src="@drawable/ic_brightness_high_black_24dp"
-            app:backgroundTint="#FFFFFFFF"
+            app:backgroundTint="@android:color/white"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
