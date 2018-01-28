@@ -85,14 +85,14 @@ public class MainActivity extends AppCompatActivity {
         listDiscoveredDevices = mainBinding.bluetoothResults.list;
         bindButtons();
         bindColorSliders();
-    }
+            }
 
     protected void onStart() {
         super.onStart();
         checkLocationPermission();
 
         sharedPref = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-        macArduino = sharedPref.getString(SettingsActivity.MAC_ARDUINO, "98:D3:32:11:02:9D");
+        macArduino = sharedPref.getString(SettingsActivity.MAC_ARDUINO, "AA:AA:AA:AA:AA:AA");
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         // Register for broadcasts when a device is discovered.
         bluetoothFilter = new IntentFilter();
@@ -307,7 +307,13 @@ public class MainActivity extends AppCompatActivity {
                         //sharedPref.edit().putString(macArduino,arrayAdapter.getItem(which).getAddress());
                         Log.e("selected dev", arrayAdapter.getItem(selectedDev)+"");
                         sharedPref.edit().putString("pref_mac_arduino", arrayAdapter.getItem(selectedDev).getAddress()).commit();
-                        initBluetooth();
+                        new Thread(new Runnable() {
+                            public void run() {
+                                queryPairedDevices(arrayAdapter.getItem(selectedDev).getAddress());
+                                connectThread(mmDevice);
+                            }
+                        }).start();
+
                         dialog.dismiss();
                     }
                 });
@@ -408,6 +414,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void discoverBluetoothDevices(){
+        discoveredBluetoothDevices.clear();
         if (mBluetoothAdapter.isDiscovering()) {
             // cancel the discovery if it has already started
             mBluetoothAdapter.cancelDiscovery();
@@ -442,7 +449,9 @@ public class MainActivity extends AppCompatActivity {
                     public void run() {
                         while (!connected){
                             Log.e("retry", "retry");
-                            connectThread(mmDevice);
+                            if (mmDevice != null && mmSocket == null) {
+                                connectThread(mmDevice);
+                            }
                         }
                     }
                 }).start();
