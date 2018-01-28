@@ -1,10 +1,12 @@
 package com.jansen.sander.arduinorgb;
 
+import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
@@ -20,10 +22,12 @@ import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.NumberPicker;
 import android.widget.SeekBar;
 
 import com.jansen.sander.arduinorgb.databinding.ActivityMainBinding;
@@ -38,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
     private static Context mContext;
 
     private final static int VIBRATION_TIME = 100;
+    private int delay = 10;
 
     private SharedPreferences sharedPref;
     private String macArduino;
@@ -199,6 +204,8 @@ public class MainActivity extends AppCompatActivity {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+            } else if (v.getId() == mainBinding.contentMain.fabDelay.getId()){
+                showNumberPicker();
             }
             if (v.getContentDescription() != null){
                 try {
@@ -474,5 +481,45 @@ public class MainActivity extends AppCompatActivity {
 
     public static ActivityMainBinding getMainActivityBinding(){
         return mainBinding;
+    }
+
+    protected void showNumberPicker(){
+
+        final AlertDialog.Builder d = new AlertDialog.Builder(getContext());
+        LayoutInflater inflater = this.getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.number_picker_dialog, null);
+        d.setTitle("Effect delay");
+        d.setMessage("Try to stay under 500 ms");
+        d.setView(dialogView);
+        final NumberPicker numberPicker = (NumberPicker) dialogView.findViewById(R.id.dialog_number_picker);
+        numberPicker.setMaxValue(65535);
+        numberPicker.setMinValue(10);
+        numberPicker.setValue(delay);
+        numberPicker.setWrapSelectorWheel(false);
+        numberPicker.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
+            @Override
+            public void onValueChange(NumberPicker numberPicker, int i, int i1) {
+                Log.d("lol", "onValueChange: ");
+            }
+        });
+        d.setPositiveButton("Done", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                Log.d("lol", "onClick: " + numberPicker.getValue());
+                delay = numberPicker.getValue();
+                try {
+                    write(String.format(getResources().getString(R.string.delayMessage), delay));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        d.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+            }
+        });
+        AlertDialog alertDialog = d.create();
+        alertDialog.show();
     }
 }

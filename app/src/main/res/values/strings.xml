@@ -103,4 +103,5 @@
     <string name="action_remove_all">Delete all</string>
     <string name="deleteAll">Delete all saved colors?</string>
     <string name="beatsMessage">{\"beats\":\"%b\"}</string>
+    <string name="delayMessage">{\"delay\":%d}</string>
 </resources>
