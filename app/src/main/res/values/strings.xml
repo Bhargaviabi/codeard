@@ -89,4 +89,8 @@
     <string name="pref_title_haptic_feedback">Haptic feedback</string>
     <string name="color_value">RED: %d, GREEN: %d, BLUE: %d</string>
     <string name="ir_value">{\"ir_val\":\"%s\"}</string>
+    <string name="connected">Connected</string>
+    <string name="btNotSupported">Bluetooth is not supported</string>
+    <string name="action_load_color">Load color</string>
+    <string name="title_activity_color">Load Color</string>
 </resources>

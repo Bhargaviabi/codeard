@@ -49,9 +49,6 @@ public class MainActivity extends AppCompatActivity {
     private OutputStream outputStream;
     private IntentFilter bluetoothFilter;
     private ArrayList<BTDevice> discoveredBluetoothDevices = new ArrayList<>();
-    private ArrayList<BluetoothDevice> pairedBTDevices = new ArrayList<>();
-
-
 
 
     @Override
@@ -85,12 +82,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
-        unregisterReceiver(mReceiver);
-    }
-
-    @Override
     protected void onResume() {
         super.onResume();
         registerReceiver(mReceiver, bluetoothFilter);
@@ -113,6 +104,10 @@ public class MainActivity extends AppCompatActivity {
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             startActivity(new Intent(this, SettingsActivity.class));
+            return true;
+        }
+        if (id == R.id.action_load_color) {
+            startActivity(new Intent(this, ColorActivity.class));
             return true;
         }
 
@@ -230,7 +225,7 @@ public class MainActivity extends AppCompatActivity {
                 discoverBluetoothDevices();
             }
         } else {
-            snackbar.setText("Bluetooth not supported").show();
+            snackbar.setText(R.string.btNotSupported).show();
         }
     }
 
@@ -338,6 +333,7 @@ public class MainActivity extends AppCompatActivity {
             mmSocket.connect();
             outputStream = mmSocket.getOutputStream();
             mmSocket.getInputStream();
+            snackbar.setText(R.string.connected).show();
         } catch (IOException connectException) {
             // Unable to connect; close the socket and return.
             try {
@@ -345,7 +341,6 @@ public class MainActivity extends AppCompatActivity {
             } catch (IOException closeException) {
                 Log.e("Bluetooth", "Could not close the client socket", closeException);
             }
-            return;
         }
 
         // The connection attempt succeeded. Perform work associated with
@@ -353,7 +348,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void write(String s) throws IOException {
-        Log.v("Data", s);
         try {
             if (outputStream != null) {
                 Log.v("Data", s);
