@@ -88,4 +88,5 @@
     <string name="pref_enable_vibration">Haptic feedback</string>
     <string name="pref_title_haptic_feedback">Haptic feedback</string>
     <string name="color_value">RED: %d, GREEN: %d, BLUE: %d</string>
+    <string name="ir_value">{\"ir_val\":\"%s\"}</string>
 </resources>

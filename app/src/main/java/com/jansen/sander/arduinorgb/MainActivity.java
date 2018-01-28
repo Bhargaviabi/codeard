@@ -8,7 +8,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
 import android.databinding.DataBindingUtil;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.preference.PreferenceManager;
@@ -169,6 +171,11 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onClick(View v) {
             if (v.getContentDescription() != null){
+                try {
+                    write(String.format(getResources().getString(R.string.ir_value), v.getContentDescription()));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 Log.d("IR-VALUE", v.getContentDescription().toString());
             }
             vibrate();
@@ -180,7 +187,11 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+            red     = mainBinding.contentMain.sliderRed.getProgress();
+            green   = mainBinding.contentMain.sliderGreen.getProgress();
+            blue    = mainBinding.contentMain.sliderBlue.getProgress();
 
+            mainBinding.contentMain.fabColor.setBackgroundTintList(ColorStateList.valueOf(Color.rgb(red, green, blue)));
         }
 
         @Override
@@ -190,10 +201,11 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onStopTrackingTouch(SeekBar seekBar) {
-
             red     = mainBinding.contentMain.sliderRed.getProgress();
             green   = mainBinding.contentMain.sliderGreen.getProgress();
             blue    = mainBinding.contentMain.sliderBlue.getProgress();
+
+            mainBinding.contentMain.fabColor.setBackgroundTintList(ColorStateList.valueOf(Color.rgb(red, green, blue)));
 
             Log.d("COLOR", String.format(getResources().getString(R.string.color_value), red, green, blue));
         }
@@ -341,9 +353,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void write(String s) throws IOException {
+        Log.v("Data", s);
         try {
             if (outputStream != null) {
-                //Log.v("Data", data);
+                Log.v("Data", s);
                 outputStream.write(s.getBytes());
             } else{
                 //snackbar.setText(R.string.notPairedConnected).show();
