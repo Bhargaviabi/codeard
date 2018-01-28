@@ -1,5 +1,6 @@
 package com.jansen.sander.arduinorgb;
 
+import android.Manifest;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -10,6 +11,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.databinding.DataBindingUtil;
 import android.graphics.Color;
@@ -19,6 +21,8 @@ import android.os.Vibrator;
 import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -80,6 +84,8 @@ public class MainActivity extends AppCompatActivity {
 
     protected void onStart() {
         super.onStart();
+        checkLocationPermission();
+
         sharedPref = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         macArduino = sharedPref.getString(SettingsActivity.MAC_ARDUINO, "98:D3:32:11:02:9D");
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -123,6 +129,10 @@ public class MainActivity extends AppCompatActivity {
         }
         if (id == R.id.action_load_color) {
             startActivity(new Intent(this, ColorActivity.class));
+            return true;
+        }
+        if (id == R.id.action_discover) {
+            discoverBluetoothDevices();
             return true;
         }
 
@@ -260,6 +270,46 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    public boolean checkLocationPermission() {
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            // Should we show an explanation?
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.ACCESS_COARSE_LOCATION)) {
+
+                // Show an explanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+                new AlertDialog.Builder(this)
+                        .setTitle(R.string.title_location_permission)
+                        .setMessage(R.string.text_location_permission)
+                        .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                //Prompt the user once explanation has been shown
+                                ActivityCompat.requestPermissions(MainActivity.this,
+                                        new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                                        1);
+                            }
+                        })
+                        .create()
+                        .show();
+
+
+            } else {
+                // No explanation needed, we can request the permission.
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},1
+                        );
+            }
+            return false;
+        } else {
+            return true;
+        }
+    }
+
     private void initBluetooth(){
         if (checkBluetoothCompatibility()){
             enableBluetooth();
@@ -293,13 +343,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void enableDiscoverability(){
-        Intent discoverableIntent =
-                new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-        discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
-        startActivity(discoverableIntent);
-    }
-
     private BluetoothDevice queryPairedDevices(String macArduino){
         Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
 
@@ -320,7 +363,6 @@ public class MainActivity extends AppCompatActivity {
             // cancel the discovery if it has already started
             mBluetoothAdapter.cancelDiscovery();
         }
-        enableDiscoverability();
         if (mBluetoothAdapter.startDiscovery()) {
             // bluetooth has started discovery
         }
@@ -342,6 +384,7 @@ public class MainActivity extends AppCompatActivity {
                 for (BluetoothDevice devX : discoveredBluetoothDevices){
                     Log.e("mac", devX.getAddress());
                 }
+                Log.d("Discoversize", ""+discoveredBluetoothDevices.size());
             } else if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)){
                 snackbar.setText(R.string.connected).show();
             } else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)){

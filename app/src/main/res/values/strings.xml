@@ -106,4 +106,7 @@
     <string name="delayMessage">{\"delay\":%d}</string>
     <string name="disconnected">Disconnected</string>
     <string name="reconnecting">Trying to reconnect</string>
+    <string name="ok">YES</string>
+    <string name="title_location_permission">Allow location access?</string>
+    <string name="text_location_permission">Location access is needed to scan for bluetooth devices.</string>
 </resources>
