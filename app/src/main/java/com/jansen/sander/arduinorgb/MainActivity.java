@@ -2,8 +2,11 @@ package com.jansen.sander.arduinorgb;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothSocket;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.databinding.DataBindingUtil;
 import android.os.Bundle;
@@ -22,12 +25,16 @@ import android.widget.SeekBar;
 
 import com.jansen.sander.arduinorgb.databinding.ActivityMainBinding;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
     private final static int VIBRATION_TIME = 100;
 
     private SharedPreferences sharedPref;
+    private String macArduino;
 
     private ActivityMainBinding mainBinding;
     private Vibrator vibrator;
@@ -35,6 +42,14 @@ public class MainActivity extends AppCompatActivity {
     private Snackbar snackbar;
 
     private BluetoothAdapter mBluetoothAdapter;
+    private BluetoothSocket mmSocket;
+    private BluetoothDevice mmDevice;
+    private OutputStream outputStream;
+    private ArrayList<BTDevice> discoveredBluetoothDevices = new ArrayList<>();
+    private ArrayList<BluetoothDevice> pairedBTDevices = new ArrayList<>();
+
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,7 +68,16 @@ public class MainActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
         sharedPref = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        macArduino = sharedPref.getString(SettingsActivity.MAC_ARDUINO, "98:D3:32:11:02:9D");
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        // Register for broadcasts when a device is discovered.
+        IntentFilter bluetoothFilter = new IntentFilter();
+        bluetoothFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
+        bluetoothFilter.addAction(BluetoothDevice.ACTION_FOUND);
+        bluetoothFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+
+        registerReceiver(mReceiver, bluetoothFilter);
+
         initBluetooth();
     }
 
@@ -153,6 +177,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onStopTrackingTouch(SeekBar seekBar) {
+
             red     = mainBinding.contentMain.sliderRed.getProgress();
             green   = mainBinding.contentMain.sliderGreen.getProgress();
             blue    = mainBinding.contentMain.sliderBlue.getProgress();
@@ -169,6 +194,11 @@ public class MainActivity extends AppCompatActivity {
     private void initBluetooth(){
         if (checkBluetoothCompatibility()){
             enableBluetooth();
+            if(queryPairedDevices(macArduino) != null) {
+                connectThread(mmDevice);
+            } else {
+                discoverBluetoothDevices();
+            }
         } else {
             snackbar.setText("Bluetooth not supported").show();
         }
@@ -196,19 +226,127 @@ public class MainActivity extends AppCompatActivity {
         startActivity(discoverableIntent);
     }
 
-    private void queryPairedDevives(){
+    private BluetoothDevice queryPairedDevices(String macArduino){
         Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
 
         if (pairedDevices.size() > 0) {
             // There are paired devices. Get the name and address of each paired device.
             for (BluetoothDevice device : pairedDevices) {
+                if(macArduino.equalsIgnoreCase(device.getAddress())){
+                    mmDevice = device;
+                    return device;
+                }
+            }
+        }
+        return null;
+    }
+
+    private void discoverBluetoothDevices(){
+        if (mBluetoothAdapter.isDiscovering()) {
+            // cancel the discovery if it has already started
+            mBluetoothAdapter.cancelDiscovery();
+        }
+        enableDiscoverability();
+        if (mBluetoothAdapter.startDiscovery()) {
+            // bluetooth has started discovery
+        }
+    }
+
+    // Create a BroadcastReceiver for ACTION_FOUND.
+    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                // Discovery has found a device. Get the BTDevice
+                // object and its info from the Intent.
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 String deviceName = device.getName();
                 String deviceHardwareAddress = device.getAddress(); // MAC address
+                discoveredBluetoothDevices.add(new BTDevice(deviceHardwareAddress, deviceName));
+                Log.e("BT","found one");
+            }
+            else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
+
+                Log.d("Discovery","Finished");
+                for (BTDevice devX : discoveredBluetoothDevices){
+                    Log.e("mac", devX.getMacAddress());
+                }
+
+            }
+        }
+    };
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Don't forget to unregister the ACTION_FOUND receiver.
+        unregisterReceiver(mReceiver);
+    }
+
+    public void connectThread (BluetoothDevice device){
+        BluetoothSocket tmp = null;
+        mmDevice = device;
+
+        try {
+            // Get a BluetoothSocket to connect with the given BluetoothDevice.
+            // MY_UUID is the app's UUID string, also used in the server code.
+            tmp = device.createRfcommSocketToServiceRecord(mmDevice.getUuids()[0].getUuid());
+        } catch (IOException e) {
+            Log.e("Bluetooth", "Socket's create() method failed", e);
+        }
+        mmSocket = tmp;
+        run();
+    }
+
+    public void run() {
+        // Cancel discovery because it otherwise slows down the connection.
+        mBluetoothAdapter.cancelDiscovery();
+
+        try {
+            // Connect to the remote device through the socket. This call blocks
+            // until it succeeds or throws an exception.
+            mmSocket.connect();
+            outputStream = mmSocket.getOutputStream();
+            mmSocket.getInputStream();
+        } catch (IOException connectException) {
+            // Unable to connect; close the socket and return.
+            try {
+                mmSocket.close();
+            } catch (IOException closeException) {
+                Log.e("Bluetooth", "Could not close the client socket", closeException);
+            }
+            return;
+        }
+
+        // The connection attempt succeeded. Perform work associated with
+        // the connection in a separate thread.
+    }
+
+    public void write(String s) throws IOException {
+        try {
+            if (outputStream != null) {
+                //Log.v("Data", data);
+                outputStream.write(s.getBytes());
+            } else{
+                //snackbar.setText(R.string.notPairedConnected).show();
+                if (mmSocket != null){
+                    cancel();
+                }
+                connectThread(mmDevice);
+            }
+        } catch (Exception e){
+            if (mmSocket != null){
+                cancel();
             }
         }
     }
 
-    private void discoverBluetoothDevices(){
-
+    // Closes the client socket and causes the thread to finish.
+    public void cancel() {
+        try {
+            mmSocket.close();
+        } catch (IOException e) {
+            Log.e("Bluetooth", "Could not close the client socket", e);
+        }
     }
 }
