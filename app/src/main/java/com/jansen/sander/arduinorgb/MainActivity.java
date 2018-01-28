@@ -45,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothSocket mmSocket;
     private BluetoothDevice mmDevice;
     private OutputStream outputStream;
+    private IntentFilter bluetoothFilter;
     private ArrayList<BTDevice> discoveredBluetoothDevices = new ArrayList<>();
     private ArrayList<BluetoothDevice> pairedBTDevices = new ArrayList<>();
 
@@ -71,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
         macArduino = sharedPref.getString(SettingsActivity.MAC_ARDUINO, "98:D3:32:11:02:9D");
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         // Register for broadcasts when a device is discovered.
-        IntentFilter bluetoothFilter = new IntentFilter();
+        bluetoothFilter = new IntentFilter();
         bluetoothFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
         bluetoothFilter.addAction(BluetoothDevice.ACTION_FOUND);
         bluetoothFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
@@ -79,6 +80,18 @@ public class MainActivity extends AppCompatActivity {
         registerReceiver(mReceiver, bluetoothFilter);
 
         initBluetooth();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unregisterReceiver(mReceiver);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        registerReceiver(mReceiver, bluetoothFilter);
     }
 
     @Override
@@ -195,8 +208,13 @@ public class MainActivity extends AppCompatActivity {
         if (checkBluetoothCompatibility()){
             enableBluetooth();
             if(queryPairedDevices(macArduino) != null) {
-                connectThread(mmDevice);
-            } else {
+                new Thread(new Runnable() {
+                    public void run() {
+                        connectThread(mmDevice);
+                    }
+                }).start();
+            }
+            else {
                 discoverBluetoothDevices();
             }
         } else {
