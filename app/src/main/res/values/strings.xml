@@ -93,4 +93,12 @@
     <string name="btNotSupported">Bluetooth is not supported</string>
     <string name="action_load_color">Load color</string>
     <string name="title_activity_color">Load Color</string>
+    <string name="saved">Saved color!</string>
+    <string name="duplicate">Already saved this color</string>
+    <string name="errorSave">Could not save color</string>
+    <string name="longPressToSave">Long press to save color</string>
+    <string name="rgbColor">RGB Color</string>
+    <string name="rgbValues">rgb(%d, %d, %d)</string>
+    <string name="action_remove_all">Delete all</string>
+    <string name="deleteAll">Delete all saved colors?</string>
 </resources>

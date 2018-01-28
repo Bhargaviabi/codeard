@@ -11,6 +11,7 @@ import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.databinding.DataBindingUtil;
 import android.graphics.Color;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.preference.PreferenceManager;
@@ -30,9 +31,12 @@ import com.jansen.sander.arduinorgb.databinding.ActivityMainBinding;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
+    private static Context mContext;
+
     private final static int VIBRATION_TIME = 100;
 
     private SharedPreferences sharedPref;
@@ -42,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
     private Vibrator vibrator;
 
     private Snackbar snackbar;
+    private boolean fabLongPressed = false;
 
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothSocket mmSocket;
@@ -54,6 +59,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mContext = this;
         mainBinding = DataBindingUtil.setContentView(this, R.layout.activity_main);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -147,6 +153,7 @@ public class MainActivity extends AppCompatActivity {
 
         mainBinding.contentMain.fabDelay.setOnClickListener(fabListener);
         mainBinding.contentMain.fabColor.setOnClickListener(fabListener);
+        mainBinding.contentMain.fabColor.setOnLongClickListener(longClickFabListener);
         mainBinding.contentMain.fabBeat.setOnClickListener(fabListener);
     }
 
@@ -162,9 +169,28 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    protected FloatingActionButton.OnLongClickListener longClickFabListener = new FloatingActionButton.OnLongClickListener(){
+
+        @Override
+        public boolean onLongClick(View v) {
+            if (v.getId() == mainBinding.contentMain.fabColor.getId()){
+                fabLongPressed = true;
+                saveColor();
+            }
+            return false;
+        }
+    };
+
     protected OnClickListener fabListener = new FloatingActionButton.OnClickListener(){
         @Override
         public void onClick(View v) {
+            if (v.getId() == mainBinding.contentMain.fabColor.getId()){
+                if (!fabLongPressed) {
+                    snackbar.setText(R.string.longPressToSave).show();
+                } else {
+                    fabLongPressed = false;
+                }
+            }
             if (v.getContentDescription() != null){
                 try {
                     write(String.format(getResources().getString(R.string.ir_value), v.getContentDescription()));
@@ -373,5 +399,61 @@ public class MainActivity extends AppCompatActivity {
         } catch (IOException e) {
             Log.e("Bluetooth", "Could not close the client socket", e);
         }
+    }
+
+
+
+    protected Boolean saveColor(){
+        try {
+            new SaveNewColorTask(new CustomColor(   mainBinding.contentMain.sliderRed.getProgress(),
+                                                    mainBinding.contentMain.sliderGreen.getProgress(),
+                                                    mainBinding.contentMain.sliderBlue.getProgress()
+                                                )).execute((Void)null);
+            return true;
+        } catch (Exception e){
+            snackbar.setText(R.string.errorSave).show();
+        }
+        return false;
+    }
+
+    public class SaveNewColorTask extends AsyncTask<Void, Void, Boolean> {
+        private final CustomColor newColor;
+        private boolean success = false;
+        private List<CustomColor> allSavedColors = new ArrayList<>();
+        private boolean alreadySaved = false;
+
+        SaveNewColorTask(CustomColor newColor){
+            this.newColor = newColor;
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... voids) {
+            allSavedColors = AppDatabase.getInstance(getApplicationContext()).colorDB().getStoredColors();
+            for (CustomColor colorX : allSavedColors){
+                if ((colorX.getRed()==newColor.getRed()) &(colorX.getGreen()==newColor.getGreen()) &(colorX.getBlue()== newColor.getBlue())){
+                    snackbar.setText(R.string.duplicate).show();
+                    alreadySaved = true;
+                    break;
+                }
+            }
+            if(!alreadySaved){
+                AppDatabase.getInstance(getApplicationContext()).colorDB().insertAllColors(newColor);
+                success = true;
+            } else {
+                success = false;
+            }
+            return success;
+        }
+
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            if (success) {
+                snackbar.setText(R.string.saved).show();
+            }
+        }
+    }
+
+    public static Context getContext(){
+        return mContext;
     }
 }
