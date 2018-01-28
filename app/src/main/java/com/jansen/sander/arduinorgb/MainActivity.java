@@ -55,6 +55,7 @@ public class MainActivity extends AppCompatActivity {
     private static Snackbar snackbar;
     private boolean fabLongPressed = false;
 
+    private static boolean connected = true;
     private static BluetoothAdapter mBluetoothAdapter;
     private static BluetoothSocket mmSocket;
     private static BluetoothDevice mmDevice;
@@ -344,12 +345,13 @@ public class MainActivity extends AppCompatActivity {
             } else if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)){
                 snackbar.setText(R.string.connected).show();
             } else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)){
+                connected = false;
                 snackbar.setText(R.string.disconnected).show();
                 snackbar.setText(R.string.reconnecting).show();
 
                 new Thread(new Runnable() {
                     public void run() {
-                        while (!MainActivity.run()){
+                        while (!connected){
                             Log.e("retry", "retry");
                             connectThread(mmDevice);
                         }
@@ -382,7 +384,7 @@ public class MainActivity extends AppCompatActivity {
         run();
     }
 
-    public static boolean run() {
+    public static void run() {
         // Cancel discovery because it otherwise slows down the connection.
         mBluetoothAdapter.cancelDiscovery();
 
@@ -392,7 +394,7 @@ public class MainActivity extends AppCompatActivity {
             mmSocket.connect();
             outputStream = mmSocket.getOutputStream();
             mmSocket.getInputStream();
-            return true;
+            connected = true;
         } catch (IOException connectException) {
             // Unable to connect; close the socket and return.
             try {
@@ -401,7 +403,6 @@ public class MainActivity extends AppCompatActivity {
                 Log.e("Bluetooth", "Could not close the client socket", closeException);
             }
         }
-        return false;
     }
 
     public static void write(String s) throws IOException {
