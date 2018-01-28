@@ -2,6 +2,7 @@ package com.jansen.sander.arduinorgb;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -31,6 +32,9 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.NumberPicker;
 import android.widget.SeekBar;
 
@@ -59,6 +63,7 @@ public class MainActivity extends AppCompatActivity {
     private static Snackbar snackbar;
     private boolean fabLongPressed = false;
 
+    private ListView listDiscoveredDevices;
     private static boolean connected = true;
     private static BluetoothAdapter mBluetoothAdapter;
     private static BluetoothSocket mmSocket;
@@ -77,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
 
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         snackbar = Snackbar.make(getWindow().getDecorView().findViewById(android.R.id.content), "", Snackbar.LENGTH_LONG);
-
+        listDiscoveredDevices = mainBinding.bluetoothResults.list;
         bindButtons();
         bindColorSliders();
     }
@@ -267,7 +272,50 @@ public class MainActivity extends AppCompatActivity {
 
     private void listBluetoothDevices(){
         //TODO list bt devices
+        final ArrayAdapter<BluetoothDevice> arrayAdapter = new ArrayAdapter<BluetoothDevice>(
+                this,
+                android.R.layout.simple_list_item_1,
+                discoveredBluetoothDevices
+        );
+        //listDiscoveredDevices.setAdapter(arrayAdapter);
 
+
+
+        AlertDialog.Builder builderSingle = new AlertDialog.Builder(MainActivity.this);
+        builderSingle.setTitle("Select Bluetooth Device");
+
+
+        builderSingle.setNegativeButton("cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+
+        builderSingle.setAdapter(arrayAdapter, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                final int selectedDev = which;
+                String devAddress = arrayAdapter.getItem(which).getAddress();
+                String devName = arrayAdapter.getItem(which).getName();
+                final AlertDialog.Builder builderInner = new AlertDialog.Builder(MainActivity.this);
+                builderInner.setMessage(devName + " ("+devAddress + ")");
+                builderInner.setTitle("Confirm this is the right device?");
+                builderInner.setPositiveButton("YES", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog,int which) {
+                        //sharedPref.edit().putString(macArduino,arrayAdapter.getItem(which).getAddress());
+                        Log.e("selected dev", arrayAdapter.getItem(selectedDev)+"");
+                        sharedPref.edit().putString("pref_mac_arduino", arrayAdapter.getItem(selectedDev).getAddress()).commit();
+                        initBluetooth();
+                        dialog.dismiss();
+                    }
+                });
+                builderInner.show();
+            }
+        });
+
+        builderSingle.show();
     }
 
     public boolean checkLocationPermission() {
@@ -322,6 +370,7 @@ public class MainActivity extends AppCompatActivity {
             }
             else {
                 discoverBluetoothDevices();
+                snackbar.setText(R.string.discovering).show();
             }
         } else {
             snackbar.setText(R.string.btNotSupported).show();
@@ -380,10 +429,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.e("BT","found bt dev");
             }
             else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
-                Log.d("Discovery","Finished");
-                for (BluetoothDevice devX : discoveredBluetoothDevices){
-                    Log.e("mac", devX.getAddress());
-                }
+                listBluetoothDevices();
                 Log.d("Discoversize", ""+discoveredBluetoothDevices.size());
             } else if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)){
                 snackbar.setText(R.string.connected).show();
