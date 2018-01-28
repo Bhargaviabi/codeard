@@ -60,8 +60,7 @@ public class MainActivity extends AppCompatActivity {
     private static BluetoothDevice mmDevice;
     private static OutputStream outputStream;
     private IntentFilter bluetoothFilter;
-    private ArrayList<BTDevice> discoveredBluetoothDevices = new ArrayList<>();
-
+    private ArrayList<BluetoothDevice> discoveredBluetoothDevices = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,6 +87,8 @@ public class MainActivity extends AppCompatActivity {
         bluetoothFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
         bluetoothFilter.addAction(BluetoothDevice.ACTION_FOUND);
         bluetoothFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+        bluetoothFilter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
+        bluetoothFilter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
 
         registerReceiver(mReceiver, bluetoothFilter);
 
@@ -253,7 +254,6 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-
     private void listBluetoothDevices(){
         //TODO list bt devices
 
@@ -333,17 +333,28 @@ public class MainActivity extends AppCompatActivity {
                 // Discovery has found a device. Get the BTDevice
                 // object and its info from the Intent.
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                String deviceName = device.getName();
-                String deviceHardwareAddress = device.getAddress(); // MAC address
-                discoveredBluetoothDevices.add(new BTDevice(deviceHardwareAddress, deviceName));
-                Log.e("BT","found one");
+                discoveredBluetoothDevices.add(device);
+                Log.e("BT","found bt dev");
             }
             else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
-
                 Log.d("Discovery","Finished");
-                for (BTDevice devX : discoveredBluetoothDevices){
-                    Log.e("mac", devX.getMacAddress());
+                for (BluetoothDevice devX : discoveredBluetoothDevices){
+                    Log.e("mac", devX.getAddress());
                 }
+            } else if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)){
+                snackbar.setText(R.string.connected).show();
+            } else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)){
+                snackbar.setText(R.string.disconnected).show();
+                snackbar.setText(R.string.reconnecting).show();
+
+                new Thread(new Runnable() {
+                    public void run() {
+                        while (!MainActivity.run()){
+                            Log.e("retry", "retry");
+                            connectThread(mmDevice);
+                        }
+                    }
+                }).start();
 
             }
         }
@@ -371,7 +382,7 @@ public class MainActivity extends AppCompatActivity {
         run();
     }
 
-    public static void run() {
+    public static boolean run() {
         // Cancel discovery because it otherwise slows down the connection.
         mBluetoothAdapter.cancelDiscovery();
 
@@ -381,7 +392,7 @@ public class MainActivity extends AppCompatActivity {
             mmSocket.connect();
             outputStream = mmSocket.getOutputStream();
             mmSocket.getInputStream();
-            snackbar.setText(R.string.connected).show();
+            return true;
         } catch (IOException connectException) {
             // Unable to connect; close the socket and return.
             try {
@@ -390,9 +401,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.e("Bluetooth", "Could not close the client socket", closeException);
             }
         }
-
-        // The connection attempt succeeded. Perform work associated with
-        // the connection in a separate thread.
+        return false;
     }
 
     public static void write(String s) throws IOException {
@@ -422,8 +431,6 @@ public class MainActivity extends AppCompatActivity {
             Log.e("Bluetooth", "Could not close the client socket", e);
         }
     }
-
-
 
     protected Boolean saveColor(){
         try {
@@ -460,11 +467,9 @@ public class MainActivity extends AppCompatActivity {
             }
             if(!alreadySaved){
                 AppDatabase.getInstance(getApplicationContext()).colorDB().insertAllColors(newColor);
-                success = true;
-            } else {
-                success = false;
+                return true;
             }
-            return success;
+            return false;
         }
 
         @Override
@@ -484,7 +489,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     protected void showNumberPicker(){
-
         final AlertDialog.Builder d = new AlertDialog.Builder(getContext());
         LayoutInflater inflater = this.getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.number_picker_dialog, null);

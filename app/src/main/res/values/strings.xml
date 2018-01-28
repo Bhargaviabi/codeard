@@ -104,4 +104,6 @@
     <string name="deleteAll">Delete all saved colors?</string>
     <string name="beatsMessage">{\"beats\":\"%b\"}</string>
     <string name="delayMessage">{\"delay\":%d}</string>
+    <string name="disconnected">Disconnected</string>
+    <string name="reconnecting">Trying to reconnect</string>
 </resources>
