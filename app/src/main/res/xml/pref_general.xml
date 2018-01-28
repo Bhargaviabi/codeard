@@ -3,7 +3,7 @@
     <PreferenceCategory android:title="@string/pref_title_MAC_Arduino">
 
         <EditTextPreference
-            android:defaultValue="AA:AA:AA:AA:AA:AA"
+            android:defaultValue="@string/defaultMAC"
             android:key="pref_mac_arduino"
             android:selectAllOnFocus="true"
             android:singleLine="true"

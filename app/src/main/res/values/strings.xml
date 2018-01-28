@@ -110,4 +110,5 @@
     <string name="title_location_permission">Allow location access?</string>
     <string name="text_location_permission">Location access is needed to scan for bluetooth devices.</string>
     <string name="discovering">Discovering devices, please wait.</string>
+    <string name="defaultMAC">AA:AA:AA:AA:AA:AA</string>
 </resources>

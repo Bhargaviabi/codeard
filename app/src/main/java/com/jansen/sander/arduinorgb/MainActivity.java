@@ -92,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
         checkLocationPermission();
 
         sharedPref = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-        macArduino = sharedPref.getString(SettingsActivity.MAC_ARDUINO, "AA:AA:AA:AA:AA:AA");
+        macArduino = sharedPref.getString(SettingsActivity.MAC_ARDUINO, String.valueOf(R.string.defaultMAC));
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         // Register for broadcasts when a device is discovered.
         bluetoothFilter = new IntentFilter();
