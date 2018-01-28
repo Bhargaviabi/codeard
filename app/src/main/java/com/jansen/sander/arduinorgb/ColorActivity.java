@@ -17,6 +17,7 @@ import android.view.MenuItem;
 
 import com.jansen.sander.arduinorgb.databinding.ActivityColorBinding;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,7 +33,7 @@ public class ColorActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         colorBinding = DataBindingUtil.setContentView(this, R.layout.activity_color);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -82,7 +83,6 @@ public class ColorActivity extends AppCompatActivity {
 
     private void setupRecyclerView(){
         RecyclerView recyclerView = colorBinding.contentColor.recyclerView;
-        //RecyclerView recyclerView = findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
         recyclerView.setAdapter(mAdapter);
 
@@ -119,9 +119,6 @@ public class ColorActivity extends AppCompatActivity {
         @Override
         protected List<CustomColor> doInBackground(Void... voids) {
             allSavedColors = AppDatabase.getInstance(getApplicationContext()).colorDB().getStoredColors();
-            for (CustomColor colorX : allSavedColors){
-                Log.v("Color", "RGB: " + colorX.getRed() + ", " + colorX.getGreen() + ", " +  colorX.getBlue() + "   id: " + colorX.getCid());
-            }
             return allSavedColors;
         }
 
@@ -137,12 +134,14 @@ public class ColorActivity extends AppCompatActivity {
         protected Boolean doInBackground(Void... voids) {
             List<CustomColor> colorByCid = AppDatabase.getInstance(getApplicationContext()).colorDB().colorByCid(cid);
             for (CustomColor colorX : colorByCid){
-                Log.v("Color", "RGB: " + colorX.getRed() + ", " + colorX.getGreen() + ", " +  colorX.getBlue() + "   id: " + colorX.getCid());
-                /*
-                sliders.get(0).setProgress(colorX.getRed());
-                sliders.get(1).setProgress(colorX.getGreen());
-                sliders.get(2).setProgress(colorX.getBlue());
-                */
+                MainActivity.getMainActivityBinding().contentMain.sliderRed.setProgress(colorX.getRed());
+                MainActivity.getMainActivityBinding().contentMain.sliderGreen.setProgress(colorX.getGreen());
+                MainActivity.getMainActivityBinding().contentMain.sliderBlue.setProgress(colorX.getBlue());
+                try {
+                    MainActivity.write(String.format(MainActivity.getContext().getResources().getString(R.string.colorMessage),colorX.getRed(), colorX.getGreen(), colorX.getBlue()));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
             return true;
         }

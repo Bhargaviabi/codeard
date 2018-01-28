@@ -42,16 +42,18 @@ public class MainActivity extends AppCompatActivity {
     private SharedPreferences sharedPref;
     private String macArduino;
 
-    private ActivityMainBinding mainBinding;
+    private boolean beatsEnabled = false;
+
+    private static ActivityMainBinding mainBinding;
     private Vibrator vibrator;
 
-    private Snackbar snackbar;
+    private static Snackbar snackbar;
     private boolean fabLongPressed = false;
 
-    private BluetoothAdapter mBluetoothAdapter;
-    private BluetoothSocket mmSocket;
-    private BluetoothDevice mmDevice;
-    private OutputStream outputStream;
+    private static BluetoothAdapter mBluetoothAdapter;
+    private static BluetoothSocket mmSocket;
+    private static BluetoothDevice mmDevice;
+    private static OutputStream outputStream;
     private IntentFilter bluetoothFilter;
     private ArrayList<BTDevice> discoveredBluetoothDevices = new ArrayList<>();
 
@@ -190,6 +192,13 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     fabLongPressed = false;
                 }
+            } else if (v.getId() == mainBinding.contentMain.fabBeat.getId()){
+                beatsEnabled = !beatsEnabled;
+                try {
+                    write(String.format(getResources().getString(R.string.beatsMessage), beatsEnabled));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
             if (v.getContentDescription() != null){
                 try {
@@ -227,6 +236,11 @@ public class MainActivity extends AppCompatActivity {
             blue    = mainBinding.contentMain.sliderBlue.getProgress();
 
             mainBinding.contentMain.fabColor.setBackgroundTintList(ColorStateList.valueOf(Color.rgb(red, green, blue)));
+            try {
+                write(String.format(getResources().getString(R.string.colorMessage),red, green, blue));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
             Log.d("COLOR", String.format(getResources().getString(R.string.color_value), red, green, blue));
         }
@@ -234,6 +248,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void listBluetoothDevices(){
+        //TODO list bt devices
 
     }
 
@@ -334,7 +349,7 @@ public class MainActivity extends AppCompatActivity {
         unregisterReceiver(mReceiver);
     }
 
-    public void connectThread (BluetoothDevice device){
+    public static void connectThread(BluetoothDevice device){
         BluetoothSocket tmp = null;
         mmDevice = device;
 
@@ -349,7 +364,7 @@ public class MainActivity extends AppCompatActivity {
         run();
     }
 
-    public void run() {
+    public static void run() {
         // Cancel discovery because it otherwise slows down the connection.
         mBluetoothAdapter.cancelDiscovery();
 
@@ -373,7 +388,7 @@ public class MainActivity extends AppCompatActivity {
         // the connection in a separate thread.
     }
 
-    public void write(String s) throws IOException {
+    public static void write(String s) throws IOException {
         try {
             if (outputStream != null) {
                 Log.v("Data", s);
@@ -393,7 +408,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // Closes the client socket and causes the thread to finish.
-    public void cancel() {
+    public static void cancel() {
         try {
             mmSocket.close();
         } catch (IOException e) {
@@ -455,5 +470,9 @@ public class MainActivity extends AppCompatActivity {
 
     public static Context getContext(){
         return mContext;
+    }
+
+    public static ActivityMainBinding getMainActivityBinding(){
+        return mainBinding;
     }
 }

@@ -99,6 +99,8 @@
     <string name="longPressToSave">Long press to save color</string>
     <string name="rgbColor">RGB Color</string>
     <string name="rgbValues">rgb(%d, %d, %d)</string>
+    <string name="colorMessage">{\"red\":%d,\"green\":%d,\"blue\":%d}</string>
     <string name="action_remove_all">Delete all</string>
     <string name="deleteAll">Delete all saved colors?</string>
+    <string name="beatsMessage">{\"beats\":\"%b\"}</string>
 </resources>
