@@ -451,14 +451,13 @@ public class MainActivity extends AppCompatActivity {
                 new Thread(new Runnable() {
                     public void run() {
                         while (!connected){
-                            Log.w("Bluetooth Connection", "Reconnecting");
-                            if (mmDevice != null && mmSocket == null) {
-                                try {
-                                    connectThread(mmDevice);
-                                    Thread.sleep(1000);
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                }
+                            if (mmDevice != null) {
+                                cancel();
+                                Log.w("Bluetooth Connection", "Reconnecting");
+                                connectThread(mmDevice);
+                            }
+                            else {
+                                queryPairedDevices(macArduino); //to assign a device to mmDevice if it is null
                             }
                         }
                     }
