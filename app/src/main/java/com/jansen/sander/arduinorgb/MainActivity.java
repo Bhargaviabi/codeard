@@ -2,6 +2,7 @@ package com.jansen.sander.arduinorgb;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -31,17 +32,23 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.NumberPicker;
 import android.widget.SeekBar;
+import android.widget.SimpleAdapter;
+import android.widget.TwoLineListItem;
 
 import com.jansen.sander.arduinorgb.databinding.ActivityMainBinding;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
@@ -269,11 +276,44 @@ public class MainActivity extends AppCompatActivity {
     };
 
     private void listBluetoothDevices(){
+        HashMap<String, String> nameAddressess = new HashMap<>();
+
+        for (BluetoothDevice devX : discoveredBluetoothDevices){
+            nameAddressess.put(devX.getName().trim(), devX.getAddress());
+        }
+
+        List<HashMap<String,String>> listItems = new ArrayList<>();
+        SimpleAdapter adapter = new SimpleAdapter(this, listItems, R.layout.list_item,
+                new String[]{"Name", "Address"},
+                new int[]{R.id.textViewName, R.id.textViewMac});
+
+        Iterator it = nameAddressess.entrySet().iterator();
+        while(it.hasNext()){
+            HashMap<String, String> resultsMap = new HashMap<>();
+            Map.Entry pair = (Map.Entry)it.next();
+            resultsMap.put("Name", pair.getKey().toString());
+            resultsMap.put("Address", pair.getValue().toString());
+            listItems.add(resultsMap);
+        }
+
+        listDiscoveredDevices.setAdapter(adapter);
+
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        builder.setCancelable(true);
+        builder.setTitle("Select the LED Controller");
+        ((ViewGroup)listDiscoveredDevices.getParent()).removeView(listDiscoveredDevices);
+        builder.setView(listDiscoveredDevices);
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+/*
+
         //TODO list bt devices
-        final ArrayAdapter<BluetoothDevice> arrayAdapter = new ArrayAdapter<BluetoothDevice>(
+        final ArrayAdapter< HashMap<String, String>> arrayAdapter = new ArrayAdapter<>(
                 this,
                 android.R.layout.simple_list_item_1,
-                discoveredBluetoothDevices
+                listItems
         );
         //listDiscoveredDevices.setAdapter(arrayAdapter);
 
@@ -294,8 +334,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 final int selectedDev = which;
-                String devAddress = arrayAdapter.getItem(which).getAddress();
-                String devName = arrayAdapter.getItem(which).getName();
+                String devAddress = arrayAdapter.getItem(which).get("Address");
+                String devName = arrayAdapter.getItem(which).get("Name");
                 final AlertDialog.Builder builderInner = new AlertDialog.Builder(MainActivity.this);
                 builderInner.setMessage(devName + " ("+devAddress + ")");
                 builderInner.setTitle("Confirm this is the right device?");
@@ -304,10 +344,10 @@ public class MainActivity extends AppCompatActivity {
                     public void onClick(DialogInterface dialog,int which) {
                         //sharedPref.edit().putString(macArduino,arrayAdapter.getItem(which).getAddress());
                         Log.e("selected dev", arrayAdapter.getItem(selectedDev)+"");
-                        sharedPref.edit().putString("pref_mac_arduino", arrayAdapter.getItem(selectedDev).getAddress()).commit();
+                        sharedPref.edit().putString("pref_mac_arduino", arrayAdapter.getItem(selectedDev).get("Address")).commit();
                         new Thread(new Runnable() {
                             public void run() {
-                                queryPairedDevices(arrayAdapter.getItem(selectedDev).getAddress());
+                                queryPairedDevices(arrayAdapter.getItem(selectedDev).get("Address"));
                                 connectThread(mmDevice);
                             }
                         }).start();
@@ -320,6 +360,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         builderSingle.show();
+        //*/
     }
 
     public boolean checkLocationPermission() {
