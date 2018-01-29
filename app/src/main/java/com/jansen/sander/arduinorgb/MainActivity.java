@@ -31,7 +31,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.widget.ListView;
 import android.widget.NumberPicker;
 import android.widget.SeekBar;
 import android.widget.SimpleAdapter;
@@ -52,7 +51,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int MAX_DELAY = 65535;
     private static Context mContext;
 
-    private final static int VIBRATION_TIME = 100;
+    private final static int VIBRATION_TIME = 50;
     private int delay = 10;
 
     private SharedPreferences sharedPref;
