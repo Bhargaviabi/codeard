@@ -136,10 +136,6 @@ public class MainActivity extends AppCompatActivity {
             startActivity(new Intent(this, ColorActivity.class));
             return true;
         }
-        if (id == R.id.action_discover) {
-            discoverBluetoothDevices();
-            return true;
-        }
 
         return super.onOptionsItemSelected(item);
     }
