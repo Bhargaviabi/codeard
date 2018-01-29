@@ -188,6 +188,51 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // Create a BroadcastReceiver for ACTION_FOUND.
+    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (BluetoothDevice.ACTION_FOUND.equals(action)) { // Discovery has found a device. Get the BTDevice object and its info from the Intent.
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                discoveredBluetoothDevices.add(device);
+                Log.i("Bluetooth Discovery", "Found" + device.getName());
+            }
+            else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
+                listBluetoothDevices();
+                mainBinding.splashScreen.constraint.setVisibility(View.GONE);
+            } else if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)){
+                snackbar.setText("Paired").show();
+                new Thread(new Runnable() {
+                    public void run() {
+                        queryPairedDevices(macArduino);
+                    }
+                }).start();
+            }
+            else if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)){
+                snackbar.setText(R.string.connected).show();
+            } else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)){
+                connected = false;
+                snackbar.setText(R.string.disconnected).show();
+                snackbar.setText(R.string.reconnecting).show();
+
+                new Thread(new Runnable() {
+                    public void run() {
+                        while (!connected){
+                            if (mmDevice != null) {
+//                                cancel();
+                                Log.w("Bluetooth Connection", "Reconnecting");
+                                connectThread(mmDevice);
+                            }
+                            else {
+                                queryPairedDevices(macArduino); //to assign a device to mmDevice if it is null
+                            }
+                        }
+                    }
+                }).start();
+            }
+        }
+    };
+
     protected FloatingActionButton.OnLongClickListener longClickFabListener = new FloatingActionButton.OnLongClickListener(){
 
         @Override
@@ -298,9 +343,18 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(DialogInterface dialog, final int which) {
                 sharedPref.edit().putString("pref_mac_arduino", listItems.get(which).get("Address")).commit();
                 macArduino = listItems.get(which).get("Address");
-                int bondState = discoveredBluetoothDevices.get(which).getBondState();
+                int bondState = 0;
+                int deviceToBeBonded = 0;
+                for (BluetoothDevice devX : discoveredBluetoothDevices){
+                    if (devX.getAddress().equalsIgnoreCase(macArduino)){
+                        bondState = discoveredBluetoothDevices.get(which).getBondState();
+                        break;
+                    }
+                    deviceToBeBonded ++;
+                }
+                Log.e("mac", listItems.get(which).get("Address") +"" );
                 if (bondState == BluetoothDevice.BOND_NONE ){
-                    discoveredBluetoothDevices.get(which).createBond();
+                    discoveredBluetoothDevices.get(deviceToBeBonded).createBond();
                 } else {
                     initBluetooth();
                 }
@@ -312,44 +366,7 @@ public class MainActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    public boolean checkLocationPermission() {
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_COARSE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
 
-            // Should we show an explanation?
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.ACCESS_COARSE_LOCATION)) {
-
-                // Show an explanation to the user *asynchronously* -- don't block
-                // this thread waiting for the user's response! After the user
-                // sees the explanation, try again to request the permission.
-                new AlertDialog.Builder(this)
-                        .setTitle(R.string.title_location_permission)
-                        .setMessage(R.string.text_location_permission)
-                        .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialogInterface, int i) {
-                                //Prompt the user once explanation has been shown
-                                ActivityCompat.requestPermissions(MainActivity.this,
-                                        new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
-                                        1);
-                            }
-                        })
-                        .create()
-                        .show();
-            } else {
-                // No explanation needed, we can request the permission.
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},1
-                        );
-            }
-            return false;
-        } else {
-            initBluetooth();
-            return true;
-        }
-    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
@@ -418,56 +435,18 @@ public class MainActivity extends AppCompatActivity {
 
     private void discoverBluetoothDevices(){
         discoveredBluetoothDevices.clear();
+        mainBinding.contentMain.constraintButtons.setVisibility(View.GONE);
+        mainBinding.contentMain.constraintSliders.setVisibility(View.GONE);
+        mainBinding.splashScreen.constraintSplash.setVisibility(View.VISIBLE);
         if (mBluetoothAdapter.isDiscovering()) {
             mBluetoothAdapter.cancelDiscovery();    // cancel the discovery if it has already started
         }
         if (mBluetoothAdapter.startDiscovery()) {
-            mainBinding.contentMain.constraintButtons.setVisibility(View.GONE);
-            mainBinding.contentMain.constraintSliders.setVisibility(View.GONE);
-            mainBinding.contentMain.mainConstraint.setVisibility(View.VISIBLE);
+
         }
     }
 
-    // Create a BroadcastReceiver for ACTION_FOUND.
-    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (BluetoothDevice.ACTION_FOUND.equals(action)) { // Discovery has found a device. Get the BTDevice object and its info from the Intent.
-                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                discoveredBluetoothDevices.add(device);
-                Log.i("Bluetooth Discovery", "Found" + device.getName());
-            }
-            else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
-                listBluetoothDevices();
-                mainBinding.splashScreen.constraint.setVisibility(View.GONE);
-            } else if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)){
-                snackbar.setText("Paired").show();
-                queryPairedDevices(macArduino);
-            }
-            else if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)){
-                snackbar.setText(R.string.connected).show();
-            } else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)){
-                connected = false;
-                snackbar.setText(R.string.disconnected).show();
-                snackbar.setText(R.string.reconnecting).show();
 
-                new Thread(new Runnable() {
-                    public void run() {
-                        while (!connected){
-                            if (mmDevice != null) {
-                                cancel();
-                                Log.w("Bluetooth Connection", "Reconnecting");
-                                connectThread(mmDevice);
-                            }
-                            else {
-                                queryPairedDevices(macArduino); //to assign a device to mmDevice if it is null
-                            }
-                        }
-                    }
-                }).start();
-            }
-        }
-    };
 
     @Override
     protected void onDestroy() {
@@ -625,5 +604,44 @@ public class MainActivity extends AppCompatActivity {
         });
         AlertDialog alertDialog = d.create();
         alertDialog.show();
+    }
+
+    public boolean checkLocationPermission() {
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            // Should we show an explanation?
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.ACCESS_COARSE_LOCATION)) {
+
+                // Show an explanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+                new AlertDialog.Builder(this)
+                        .setTitle(R.string.title_location_permission)
+                        .setMessage(R.string.text_location_permission)
+                        .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                //Prompt the user once explanation has been shown
+                                ActivityCompat.requestPermissions(MainActivity.this,
+                                        new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                                        1);
+                            }
+                        })
+                        .create()
+                        .show();
+            } else {
+                // No explanation needed, we can request the permission.
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},1
+                );
+            }
+            return false;
+        } else {
+            initBluetooth();
+            return true;
+        }
     }
 }
