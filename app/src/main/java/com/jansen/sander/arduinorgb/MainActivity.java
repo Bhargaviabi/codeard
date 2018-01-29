@@ -93,7 +93,7 @@ public class MainActivity extends AppCompatActivity {
 
     protected void onStart() {
         super.onStart();
-        checkLocationPermission();
+
 
         sharedPref = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         macArduino = sharedPref.getString(SettingsActivity.MAC_ARDUINO, String.valueOf(R.string.defaultMAC));
@@ -108,8 +108,7 @@ public class MainActivity extends AppCompatActivity {
         bluetoothFilter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
 
         registerReceiver(mReceiver, bluetoothFilter);
-
-        initBluetooth();
+        checkLocationPermission();
     }
 
     @Override
@@ -311,7 +310,13 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(DialogInterface dialog, final int which) {
                 sharedPref.edit().putString("pref_mac_arduino", listItems.get(which).get("Address")).commit();
                 macArduino = listItems.get(which).get("Address");
-                discoveredBluetoothDevices.get(which).createBond();
+                int bondState = discoveredBluetoothDevices.get(which).getBondState();
+                if (bondState == BluetoothDevice.BOND_NONE ){
+                    discoveredBluetoothDevices.get(which).createBond();
+                } else {
+                    initBluetooth();
+                }
+
             }
         });
         AlertDialog dialog = builder.create();
@@ -352,7 +357,25 @@ public class MainActivity extends AppCompatActivity {
             }
             return false;
         } else {
+            initBluetooth();
             return true;
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if(ActivityCompat.checkSelfPermission(this, permissions[0]) == PackageManager.PERMISSION_GRANTED){
+            switch (requestCode) {
+                //Location
+                case 1:
+                    if (ContextCompat.checkSelfPermission(this,
+                            Manifest.permission.ACCESS_COARSE_LOCATION)
+                            == PackageManager.PERMISSION_GRANTED){
+                        initBluetooth();
+                    }
+                    break;
+            }
         }
     }
 
