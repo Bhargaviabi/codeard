@@ -40,7 +40,6 @@ import com.jansen.sander.arduinorgb.databinding.ActivityMainBinding;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -67,7 +66,6 @@ public class MainActivity extends AppCompatActivity {
     private static Snackbar snackbar;
     private boolean fabLongPressed = false;
 
-    private ListView listDiscoveredDevices;
     private static boolean connected = true;
     private static BluetoothAdapter mBluetoothAdapter;
     private static BluetoothSocket mmSocket;
@@ -86,14 +84,12 @@ public class MainActivity extends AppCompatActivity {
 
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         snackbar = Snackbar.make(getWindow().getDecorView().findViewById(android.R.id.content), "", Snackbar.LENGTH_LONG);
-        listDiscoveredDevices = mainBinding.bluetoothResults.list;
         bindButtons();
         bindColorSliders();
     }
 
     protected void onStart() {
         super.onStart();
-
 
         sharedPref = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         macArduino = sharedPref.getString(SettingsActivity.MAC_ARDUINO, String.valueOf(R.string.defaultMAC));
@@ -234,7 +230,6 @@ public class MainActivity extends AppCompatActivity {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                Log.d("IR-VALUE", v.getContentDescription().toString());
             }
             vibrate();
         }
@@ -269,8 +264,6 @@ public class MainActivity extends AppCompatActivity {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
-            Log.d("COLOR", String.format(getResources().getString(R.string.color_value), red, green, blue));
         }
     };
 
@@ -444,15 +437,13 @@ public class MainActivity extends AppCompatActivity {
             if (BluetoothDevice.ACTION_FOUND.equals(action)) { // Discovery has found a device. Get the BTDevice object and its info from the Intent.
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 discoveredBluetoothDevices.add(device);
-                Log.e("BT","found bt dev");
+                Log.i("Bluetooth Discovery", "Found" + device.getName());
             }
             else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
                 listBluetoothDevices();
-                Log.d("Discoversize", ""+discoveredBluetoothDevices.size());
             } else if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)){
                 snackbar.setText("Paired").show();
                 queryPairedDevices(macArduino);
-                //connectThread(mmDevice);
             }
             else if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)){
                 snackbar.setText(R.string.connected).show();
@@ -464,9 +455,14 @@ public class MainActivity extends AppCompatActivity {
                 new Thread(new Runnable() {
                     public void run() {
                         while (!connected){
-                            Log.e("retry", "retry");
+                            Log.w("Bluetooth Connection", "Reconnecting");
                             if (mmDevice != null && mmSocket == null) {
-                                connectThread(mmDevice);
+                                try {
+                                    connectThread(mmDevice);
+                                    Thread.sleep(1000);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
                             }
                         }
                     }
@@ -516,7 +512,7 @@ public class MainActivity extends AppCompatActivity {
     public static void write(String s) throws IOException {
         try {
             if (outputStream != null) {
-                Log.v("Data", s);
+                Log.i("Data", s);
                 outputStream.write(s.getBytes());
             } else{
                 snackbar.setText(R.string.notPairedConnected).show();
