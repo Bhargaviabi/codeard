@@ -2,7 +2,6 @@ package com.jansen.sander.arduinorgb;
 
 import android.Manifest;
 import android.app.AlertDialog;
-import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -32,18 +31,16 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.NumberPicker;
 import android.widget.SeekBar;
 import android.widget.SimpleAdapter;
-import android.widget.TwoLineListItem;
 
 import com.jansen.sander.arduinorgb.databinding.ActivityMainBinding;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -52,6 +49,8 @@ import java.util.Map;
 import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
+    private static final int MIN_DELAY = 10;
+    private static final int MAX_DELAY = 65535;
     private static Context mContext;
 
     private final static int VIBRATION_TIME = 100;
@@ -90,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
         listDiscoveredDevices = mainBinding.bluetoothResults.list;
         bindButtons();
         bindColorSliders();
-            }
+    }
 
     protected void onStart() {
         super.onStart();
@@ -106,6 +105,7 @@ public class MainActivity extends AppCompatActivity {
         bluetoothFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
         bluetoothFilter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
         bluetoothFilter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
+        bluetoothFilter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
 
         registerReceiver(mReceiver, bluetoothFilter);
 
@@ -282,8 +282,8 @@ public class MainActivity extends AppCompatActivity {
             nameAddressess.put(devX.getName().trim(), devX.getAddress());
         }
 
-        List<HashMap<String,String>> listItems = new ArrayList<>();
-        SimpleAdapter adapter = new SimpleAdapter(this, listItems, R.layout.list_item,
+        final List<HashMap<String,String>> listItems = new ArrayList<>();
+        final SimpleAdapter adapter = new SimpleAdapter(this, listItems, R.layout.list_item,
                 new String[]{"Name", "Address"},
                 new int[]{R.id.textViewName, R.id.textViewMac});
 
@@ -296,71 +296,26 @@ public class MainActivity extends AppCompatActivity {
             listItems.add(resultsMap);
         }
 
-        listDiscoveredDevices.setAdapter(adapter);
-
-
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
         builder.setCancelable(true);
         builder.setTitle("Select the LED Controller");
-        ((ViewGroup)listDiscoveredDevices.getParent()).removeView(listDiscoveredDevices);
-        builder.setView(listDiscoveredDevices);
-        AlertDialog dialog = builder.create();
-        dialog.show();
-
-/*
-
-        //TODO list bt devices
-        final ArrayAdapter< HashMap<String, String>> arrayAdapter = new ArrayAdapter<>(
-                this,
-                android.R.layout.simple_list_item_1,
-                listItems
-        );
-        //listDiscoveredDevices.setAdapter(arrayAdapter);
-
-
-
-        AlertDialog.Builder builderSingle = new AlertDialog.Builder(MainActivity.this);
-        builderSingle.setTitle("Select Bluetooth Device");
-
-
-        builderSingle.setNegativeButton("cancel", new DialogInterface.OnClickListener() {
+        builder.setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.dismiss();
             }
         });
 
-        builderSingle.setAdapter(arrayAdapter, new DialogInterface.OnClickListener() {
+        builder.setAdapter(adapter, new DialogInterface.OnClickListener() {
             @Override
-            public void onClick(DialogInterface dialog, int which) {
-                final int selectedDev = which;
-                String devAddress = arrayAdapter.getItem(which).get("Address");
-                String devName = arrayAdapter.getItem(which).get("Name");
-                final AlertDialog.Builder builderInner = new AlertDialog.Builder(MainActivity.this);
-                builderInner.setMessage(devName + " ("+devAddress + ")");
-                builderInner.setTitle("Confirm this is the right device?");
-                builderInner.setPositiveButton("YES", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog,int which) {
-                        //sharedPref.edit().putString(macArduino,arrayAdapter.getItem(which).getAddress());
-                        Log.e("selected dev", arrayAdapter.getItem(selectedDev)+"");
-                        sharedPref.edit().putString("pref_mac_arduino", arrayAdapter.getItem(selectedDev).get("Address")).commit();
-                        new Thread(new Runnable() {
-                            public void run() {
-                                queryPairedDevices(arrayAdapter.getItem(selectedDev).get("Address"));
-                                connectThread(mmDevice);
-                            }
-                        }).start();
-
-                        dialog.dismiss();
-                    }
-                });
-                builderInner.show();
+            public void onClick(DialogInterface dialog, final int which) {
+                sharedPref.edit().putString("pref_mac_arduino", listItems.get(which).get("Address")).commit();
+                macArduino = listItems.get(which).get("Address");
+                discoveredBluetoothDevices.get(which).createBond();
             }
         });
-
-        builderSingle.show();
-        //*/
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 
     public boolean checkLocationPermission() {
@@ -389,8 +344,6 @@ public class MainActivity extends AppCompatActivity {
                         })
                         .create()
                         .show();
-
-
             } else {
                 // No explanation needed, we can request the permission.
                 ActivityCompat.requestPermissions(this,
@@ -440,8 +393,7 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothDevice queryPairedDevices(String macArduino){
         Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
 
-        if (pairedDevices.size() > 0) {
-            // There are paired devices. Get the name and address of each paired device.
+        if (pairedDevices.size() > 0) { // There are paired devices. Get the name and address of each paired device.
             for (BluetoothDevice device : pairedDevices) {
                 if(macArduino.equalsIgnoreCase(device.getAddress())){
                     mmDevice = device;
@@ -455,8 +407,7 @@ public class MainActivity extends AppCompatActivity {
     private void discoverBluetoothDevices(){
         discoveredBluetoothDevices.clear();
         if (mBluetoothAdapter.isDiscovering()) {
-            // cancel the discovery if it has already started
-            mBluetoothAdapter.cancelDiscovery();
+            mBluetoothAdapter.cancelDiscovery();    // cancel the discovery if it has already started
         }
         if (mBluetoothAdapter.startDiscovery()) {
             // bluetooth has started discovery
@@ -467,9 +418,7 @@ public class MainActivity extends AppCompatActivity {
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-                // Discovery has found a device. Get the BTDevice
-                // object and its info from the Intent.
+            if (BluetoothDevice.ACTION_FOUND.equals(action)) { // Discovery has found a device. Get the BTDevice object and its info from the Intent.
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 discoveredBluetoothDevices.add(device);
                 Log.e("BT","found bt dev");
@@ -477,7 +426,12 @@ public class MainActivity extends AppCompatActivity {
             else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
                 listBluetoothDevices();
                 Log.d("Discoversize", ""+discoveredBluetoothDevices.size());
-            } else if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)){
+            } else if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)){
+                snackbar.setText("Paired").show();
+                queryPairedDevices(macArduino);
+                //connectThread(mmDevice);
+            }
+            else if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)){
                 snackbar.setText(R.string.connected).show();
             } else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)){
                 connected = false;
@@ -494,7 +448,6 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
                 }).start();
-
             }
         }
     };
@@ -502,8 +455,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        // Don't forget to unregister the ACTION_FOUND receiver.
-        unregisterReceiver(mReceiver);
+        unregisterReceiver(mReceiver);  // Don't forget to unregister the ACTION_FOUND receiver.
     }
 
     public static void connectThread(BluetoothDevice device){
@@ -522,18 +474,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public static void run() {
-        // Cancel discovery because it otherwise slows down the connection.
-        mBluetoothAdapter.cancelDiscovery();
+        mBluetoothAdapter.cancelDiscovery();    // Cancel discovery because it otherwise slows down the connection.
 
         try {
-            // Connect to the remote device through the socket. This call blocks
-            // until it succeeds or throws an exception.
-            mmSocket.connect();
-            outputStream = mmSocket.getOutputStream();
+            mmSocket.connect();                                 // Connect to the remote device through the socket. This call blocks
+            outputStream = mmSocket.getOutputStream();          // until it succeeds or throws an exception.
             mmSocket.getInputStream();
             connected = true;
-        } catch (IOException connectException) {
-            // Unable to connect; close the socket and return.
+        } catch (IOException connectException) {    // Unable to connect; close the socket and return.
             try {
                 mmSocket.close();
             } catch (IOException closeException) {
@@ -548,7 +496,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.v("Data", s);
                 outputStream.write(s.getBytes());
             } else{
-                //snackbar.setText(R.string.notPairedConnected).show();
+                snackbar.setText(R.string.notPairedConnected).show();
                 if (mmSocket != null){
                     cancel();
                 }
@@ -561,8 +509,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // Closes the client socket and causes the thread to finish.
-    public static void cancel() {
+    public static void cancel() {   // Closes the client socket and causes the thread to finish.
         try {
             mmSocket.close();
         } catch (IOException e) {
@@ -585,7 +532,6 @@ public class MainActivity extends AppCompatActivity {
 
     public class SaveNewColorTask extends AsyncTask<Void, Void, Boolean> {
         private final CustomColor newColor;
-        private boolean success = false;
         private List<CustomColor> allSavedColors = new ArrayList<>();
         private boolean alreadySaved = false;
 
@@ -630,24 +576,23 @@ public class MainActivity extends AppCompatActivity {
         final AlertDialog.Builder d = new AlertDialog.Builder(getContext());
         LayoutInflater inflater = this.getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.number_picker_dialog, null);
-        d.setTitle("Effect delay");
-        d.setMessage("Try to stay under 500 ms");
+        d.setTitle(R.string.title_delay);
+        d.setMessage(R.string.delay_instruction);
         d.setView(dialogView);
-        final NumberPicker numberPicker = (NumberPicker) dialogView.findViewById(R.id.dialog_number_picker);
-        numberPicker.setMaxValue(65535);
-        numberPicker.setMinValue(10);
+        final NumberPicker numberPicker = dialogView.findViewById(R.id.dialog_number_picker);
+        numberPicker.setMaxValue(MAX_DELAY);
+        numberPicker.setMinValue(MIN_DELAY);
         numberPicker.setValue(delay);
         numberPicker.setWrapSelectorWheel(false);
         numberPicker.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
             @Override
             public void onValueChange(NumberPicker numberPicker, int i, int i1) {
-                Log.d("lol", "onValueChange: ");
+
             }
         });
-        d.setPositiveButton("Done", new DialogInterface.OnClickListener() {
+        d.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-                Log.d("lol", "onClick: " + numberPicker.getValue());
                 delay = numberPicker.getValue();
                 try {
                     write(String.format(getResources().getString(R.string.delayMessage), delay));
@@ -656,7 +601,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
-        d.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+        d.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
             }

@@ -111,4 +111,8 @@
     <string name="text_location_permission">Location access is needed to scan for bluetooth devices.</string>
     <string name="discovering">Discovering devices, please wait.</string>
     <string name="defaultMAC">AA:AA:AA:AA:AA:AA</string>
+    <string name="cancel">CANCEL</string>
+    <string name="title_delay">Effect delay</string>
+    <string name="delay_instruction">Try to stay under 500 ms to keep it smooth.</string>
+    <string name="notPairedConnected">Device is not paired or connected.</string>
 </resources>
