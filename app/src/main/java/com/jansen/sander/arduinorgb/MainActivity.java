@@ -304,7 +304,8 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     initBluetooth();
                 }
-
+                mainBinding.contentMain.constraintButtons.setVisibility(View.VISIBLE);
+                mainBinding.contentMain.constraintSliders.setVisibility(View.VISIBLE);
             }
         });
         AlertDialog dialog = builder.create();
@@ -421,7 +422,9 @@ public class MainActivity extends AppCompatActivity {
             mBluetoothAdapter.cancelDiscovery();    // cancel the discovery if it has already started
         }
         if (mBluetoothAdapter.startDiscovery()) {
-            // bluetooth has started discovery
+            mainBinding.contentMain.constraintButtons.setVisibility(View.GONE);
+            mainBinding.contentMain.constraintSliders.setVisibility(View.GONE);
+            mainBinding.contentMain.mainConstraint.setVisibility(View.VISIBLE);
         }
     }
 
@@ -436,6 +439,7 @@ public class MainActivity extends AppCompatActivity {
             }
             else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
                 listBluetoothDevices();
+                mainBinding.splashScreen.constraint.setVisibility(View.GONE);
             } else if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)){
                 snackbar.setText("Paired").show();
                 queryPairedDevices(macArduino);

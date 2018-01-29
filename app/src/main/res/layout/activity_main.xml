@@ -23,6 +23,7 @@
 
     <include layout="@layout/content_main" android:id="@+id/content_main" />
     <include layout="@layout/bluetooth_results" android:id="@+id/bluetooth_results" />
+    <include layout="@layout/splash_screen" android:id="@+id/splash_screen" />
 
 </android.support.design.widget.CoordinatorLayout>
 </layout>
