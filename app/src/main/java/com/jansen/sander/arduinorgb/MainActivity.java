@@ -496,7 +496,11 @@ public class MainActivity extends AppCompatActivity {
                 if (mmSocket != null){
                     cancel();
                 }
-                connectThread(mmDevice);
+                new Thread(new Runnable() {
+                    public void run() {
+                        connectThread(mmDevice);
+                    }
+                }).start();
             }
         } catch (Exception e){
             if (mmSocket != null){
